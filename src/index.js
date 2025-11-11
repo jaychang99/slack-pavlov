@@ -28,6 +28,31 @@ const AWARENESS_LINES = [
   '함께 만드는 좋은 대화, 바른말 고운말! 🤗'
 ];
 
+// ---- Sliding window store (per user) ----
+const WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const THRESHOLD = 5;
+// userId -> array (acts like deque) of timestamps (ms)
+const userHits = new Map();
+
+/**
+ * Push a hit for userId, evict old entries, return current window size.
+ * Uses O(k) worst-case per call where k = number of hits in the hour,
+ * but with deque-like shifting it’s very fast in practice.
+ */
+function recordHit(userId, now) {
+  let q = userHits.get(userId);
+  if (!q) { q = []; userHits.set(userId, q); }
+
+  // Evict old timestamps (older than 1 hour)
+  const cutoff = now - WINDOW_MS;
+  while (q.length && q[0] < cutoff) q.shift();
+
+  // Add current timestamp
+  q.push(now);
+  return q.length;
+}
+
+
 const pickLine = () =>
   AWARENESS_LINES[Math.floor(Math.random() * AWARENESS_LINES.length)];
 
@@ -47,15 +72,20 @@ app.message(async ({ message, client, logger }) => {
 
   const emoji = keywordToEmoji[matchedKey];
   const userId = message.user;
+  const now = Date.now();
 
   await client.reactions.add({ channel: message.channel, timestamp: message.ts, name: emoji });
 
-  // b) Post a threaded reply with a random awareness message
-  await client.chat.postMessage({
-    channel: message.channel,
-    thread_ts: message.thread_ts || message.ts, // reply in thread (start one if none)
-    text: `<@${userId}> ${pickLine()}`
-  });
+  const count = recordHit(userId, now);
+
+  if (count >= THRESHOLD) {
+    // b) Post a threaded reply with a random awareness message
+    await client.chat.postMessage({
+      channel: message.channel,
+      thread_ts: message.thread_ts || message.ts, // reply in thread (start one if none)
+      text: `<@${userId}> ${pickLine()}`
+    });
+  }
 });
 
 
