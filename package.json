@@ -1,0 +1,25 @@
+{
+  "name": "slack-pavlov",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaychang99/slack-pavlov.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jaychang99/slack-pavlov/issues"
+  },
+  "homepage": "https://github.com/jaychang99/slack-pavlov#readme",
+  "dependencies": {
+    "@slack/bolt": "^4.6.0",
+    "dotenv": "^17.2.3"
+  }
+}
